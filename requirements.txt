@@ -1,0 +1,11 @@
+# Glitch Lab - Wymagane biblioteki
+# Instalacja: pip install -r requirements.txt
+
+# Przetwarzanie obrazów
+Pillow>=9.0.0
+
+# Operacje na tablicach (przetwarzanie pikseli)
+numpy>=1.21.0
+
+# Auto-restart podczas rozwoju (opcjonalne)
+watchdog>=2.1.0
