@@ -1,3 +1,5 @@
+ENGLISH README IN FILE README_ENG.MD
+
 # ⚡ Glitch Lab
 ![GL](https://github.com/user-attachments/assets/fd92f9a3-87f3-4c04-b065-29f2852fe1c8)
 
@@ -186,3 +188,4 @@ Open Source - szczegóły w pliku LICENSE
 
 
 **Glitch Lab** - Gdzie kontrolowane zniekształcenia stają się sztuką cyfrową ⚡
+
