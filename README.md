@@ -1,10 +1,11 @@
 # ⚡ Glitch Lab
+![GL](https://github.com/user-attachments/assets/fd92f9a3-87f3-4c04-b065-29f2852fe1c8)
 
 **Eksperymentalne efekty glitch na klatkach animacji z podglądem w czasie rzeczywistym**
 
 Glitch Lab to zaawansowane narzędzie desktop do tworzenia sztuki cyfrowej poprzez kontrolowane zniekształcenia obrazu. Aplikacja pozwala na zastosowanie różnorodnych efektów glitch do sekwencji klatek animacji, oferując pełną kontrolę nad intensywnością i parametrami efektów.
 
-![Glitch Lab Interface](https://img.shields.io/badge/Interface-Polish-blue) ![Python](https://img.shields.io/badge/Python-3.x-green) ![GUI](https://img.shields.io/badge/GUI-Tkinter-orange) ![License](https://img.shields.io/badge/License-Open%20Source-brightgreen)
+![Glitch Lab Interface](https://img.shields.io/badge/Interface-Polish-blue) ![Glitch Lab Interface](https://img.shields.io/badge/Interface-English-blue) ![Python](https://img.shields.io/badge/Python-3.x-green) ![GUI](https://img.shields.io/badge/GUI-Tkinter-orange) ![License](https://img.shields.io/badge/License-Open%20Source-brightgreen)
 
 ## ✨ Główne Funkcje
 
@@ -182,5 +183,6 @@ Zapraszamy do współpracy! Projekt jest otwarty na:
 Open Source - szczegóły w pliku LICENSE
 
 ---
+
 
 **Glitch Lab** - Gdzie kontrolowane zniekształcenia stają się sztuką cyfrową ⚡
