@@ -77,9 +77,6 @@ class App:
         self.setup_left_panel(left_frame)
         self.setup_middle_panel(self.middle_frame)
         self.setup_right_panel(right_frame)
-        
-        # Initialize UI texts with current language
-        self.on_language_changed(language_manager.get_language())
     
     def on_pattern_change(self, event):
         """Handle pattern selection change."""
@@ -225,25 +222,12 @@ class App:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Obsługa scrollowania myszką - tylko dla lewego panelu
+        # Obsługa scrollowania myszką
         def on_mousewheel(event):
             canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        
-        # Funkcja do bindowania mousewheel do wszystkich elementów potomnych
-        def bind_mousewheel_recursive(widget):
-            widget.bind("<MouseWheel>", on_mousewheel)
-            for child in widget.winfo_children():
-                bind_mousewheel_recursive(child)
-        
-        # Bind do canvas i scrollable_frame
-        canvas.bind("<MouseWheel>", on_mousewheel)
-        scrollable_frame.bind("<MouseWheel>", on_mousewheel)
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
         
         main_frame = ttk.Frame(scrollable_frame, padding=12)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Zapisz referencję do funkcji bindowania dla późniejszego użycia
-        self.left_panel_bind_mousewheel = bind_mousewheel_recursive
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # Tytuł sekcji z wersją i linkiem
@@ -525,10 +509,6 @@ class App:
         
         self.ui_elements['preview_btn'] = ttk.Button(btn_frame, text=language_manager.t('preview'), command=self.preview_current_frame)
         self.ui_elements['preview_btn'].pack(side=tk.LEFT, padx=5)
-        
-        # Bind mousewheel do wszystkich elementów w lewym panelu
-        # Opóźnij binding aby wszystkie elementy były już utworzone
-        self.root.after(100, lambda: self.left_panel_bind_mousewheel(main_frame))
     
     def setup_middle_panel(self, parent):
         """Konfiguruje środkowy panel z zaawansowanymi parametrami efektów."""
@@ -544,25 +524,13 @@ class App:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Obsługa scrollowania myszką - tylko dla środkowego panelu
+        # Obsługa scrollowania myszką
         def on_mousewheel(event):
             canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        
-        # Funkcja do bindowania mousewheel do wszystkich elementów potomnych
-        def bind_mousewheel_recursive(widget):
-            widget.bind("<MouseWheel>", on_mousewheel)
-            for child in widget.winfo_children():
-                bind_mousewheel_recursive(child)
-        
-        # Bind do canvas i scrollable_frame
-        canvas.bind("<MouseWheel>", on_mousewheel)
-        scrollable_frame.bind("<MouseWheel>", on_mousewheel)
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
         
         self.middle_scrollable_frame = scrollable_frame
         self.middle_canvas = canvas
-        
-        # Zapisz referencję do funkcji bindowania dla późniejszego użycia
-        self.middle_panel_bind_mousewheel = bind_mousewheel_recursive
         
         main_frame = ttk.Frame(scrollable_frame, padding=12)
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -589,132 +557,110 @@ class App:
         self.param_vars = {}
         self.effect_frames = {}
         
-        # Inicjalne wypełnienie zostanie wykonane gdy panel będzie pierwszy raz pokazany
-        
-        # Bind mousewheel do wszystkich elementów w środkowym panelu
-        # Opóźnij binding aby wszystkie elementy były już utworzone
-        self.root.after(100, lambda: self.middle_panel_bind_mousewheel(main_frame))
+        # Inicjalne wypełnienie
+        self.update_advanced_params_display()
     
     def update_advanced_params_display(self):
         """Aktualizuje wyświetlanie parametrów zaawansowanych - pokazuje tylko aktywne efekty."""
-        try:
-            self.log("DEBUG: update_advanced_params_display called")
+        # Usuń wszystkie istniejące ramki
+        for widget in self.effects_container.winfo_children():
+            widget.destroy()
+        
+        self.effect_frames = {}
+        
+        # Pobierz aktywne efekty
+        enabled_effects = self.get_enabled_effects()
+        
+        if not enabled_effects:
+            # Pokaż komunikat gdy brak aktywnych efektów
+            msg_label = ttk.Label(self.effects_container, 
+                    text=language_manager.t('no_active_effects'),
+                    font=('Segoe UI', 9),
+                    foreground='#a0a0a0')
+            msg_label.pack(pady=20)
+            return
+        
+        # Dla każdego aktywnego efektu stwórz sekcję
+        for effect_key in enabled_effects:
+            current_params = get_default_effect_params()
+            if effect_key not in current_params:
+                continue
             
-            # Usuń wszystkie istniejące ramki
-            for widget in self.effects_container.winfo_children():
-                widget.destroy()
+            current_effects = get_effects()
+            effect_name = current_effects[effect_key][0]
             
-            self.effect_frames = {}
+            # Ramka dla efektu
+            effect_frame = ttk.LabelFrame(self.effects_container, text=f"🎨 {effect_name}", padding=8)
+            effect_frame.pack(fill=tk.X, pady=(0, 8))
             
-            # Pobierz aktywne efekty
-            enabled_effects = self.get_enabled_effects()
-            self.log(f"DEBUG: Enabled effects: {enabled_effects}")
+            self.effect_frames[effect_key] = effect_frame
             
-            if not enabled_effects:
-                # Pokaż komunikat gdy brak aktywnych efektów
-                msg_label = ttk.Label(self.effects_container, 
-                        text=language_manager.t('no_active_effects'),
-                        font=('Segoe UI', 9),
-                        foreground='#a0a0a0')
-                msg_label.pack(pady=20)
-                self.log("DEBUG: No active effects, showing message")
-                return
+            if effect_key not in self.param_vars:
+                self.param_vars[effect_key] = {}
             
-            # Dla każdego aktywnego efektu stwórz sekcję
-            for effect_key in enabled_effects:
-                current_params = get_default_effect_params()
-                if effect_key not in current_params:
-                    self.log(f"DEBUG: Effect {effect_key} not found in params, skipping")
-                    continue
+            # Dla każdego parametru efektu
+            for param_name, param_info in current_params[effect_key].items():
+                param_frame = ttk.Frame(effect_frame)
+                param_frame.pack(fill=tk.X, pady=2)
                 
-                current_effects = get_effects()
-                effect_name = current_effects[effect_key][0]
-                self.log(f"DEBUG: Creating section for effect: {effect_name}")
+                # Label
+                label_text = param_info['label']
+                ttk.Label(param_frame, text=label_text, width=20, 
+                        foreground=NeonTheme.TEXT_SECONDARY, 
+                        font=('Segoe UI', 8), anchor=tk.W).pack(side=tk.TOP, anchor=tk.W)
                 
-                # Ramka dla efektu
-                effect_frame = ttk.LabelFrame(self.effects_container, text=f"🎨 {effect_name}", padding=8)
-                effect_frame.pack(fill=tk.X, pady=(0, 8))
+                control_frame = ttk.Frame(param_frame)
+                control_frame.pack(fill=tk.X)
                 
-                self.effect_frames[effect_key] = effect_frame
+                # Pobierz aktualną wartość lub domyślną
+                current_value = self.effect_params.get(effect_key, {}).get(param_name, param_info['value'])
                 
-                if effect_key not in self.param_vars:
-                    self.param_vars[effect_key] = {}
-                
-                # Dla każdego parametru efektu
-                for param_name, param_info in current_params[effect_key].items():
-                    self.log(f"DEBUG: Creating parameter control for {param_name}")
-                    param_frame = ttk.Frame(effect_frame)
-                    param_frame.pack(fill=tk.X, pady=2)
-                    
-                    # Label
-                    label_text = param_info['label']
-                    ttk.Label(param_frame, text=label_text, width=20, 
-                            foreground=NeonTheme.TEXT_SECONDARY, 
-                            font=('Segoe UI', 8), anchor=tk.W).pack(side=tk.TOP, anchor=tk.W)
-                    
-                    control_frame = ttk.Frame(param_frame)
-                    control_frame.pack(fill=tk.X)
-                    
-                    # Pobierz aktualną wartość lub domyślną
-                    current_value = self.effect_params.get(effect_key, {}).get(param_name, param_info['value'])
-                    
-                    # Zmienna - użyj istniejącej lub stwórz nową
-                    if param_name not in self.param_vars[effect_key]:
-                        if isinstance(param_info['value'], float):
-                            var = tk.DoubleVar(value=current_value)
-                        else:
-                            var = tk.IntVar(value=current_value)
-                        self.param_vars[effect_key][param_name] = var
+                # Zmienna - użyj istniejącej lub stwórz nową
+                if param_name not in self.param_vars[effect_key]:
+                    if isinstance(param_info['value'], float):
+                        var = tk.DoubleVar(value=current_value)
                     else:
-                        var = self.param_vars[effect_key][param_name]
-                    
-                    # Slider
-                    slider = ttk.Scale(control_frame, from_=param_info['min'], to=param_info['max'],
-                                       variable=var, orient=tk.HORIZONTAL, length=180)
-                    slider.pack(side=tk.LEFT, fill=tk.X, expand=True)
-                    
-                    # Wartość
-                    value_label = ttk.Label(control_frame, 
-                                           text=f"{current_value:.2f}" if isinstance(current_value, float) else str(current_value),
-                                           style='Accent.TLabel', width=6, font=('Segoe UI', 8))
-                    value_label.pack(side=tk.LEFT, padx=3)
-                    
-                    # Aktualizuj label przy zmianie i zapisz do effect_params
-                    def update_param(val, eff=effect_key, par=param_name, lbl=value_label, 
-                                   v=var, is_float=isinstance(param_info['value'], float)):
-                        if is_float:
-                            lbl.config(text=f"{v.get():.2f}")
-                        else:
-                            lbl.config(text=str(int(v.get())))
-                        # Zapisz do effect_params
-                        if eff not in self.effect_params:
-                            self.effect_params[eff] = {}
-                        self.effect_params[eff][par] = v.get()
-                    
-                    # Usuń stare trace jeśli istnieje, dodaj nowe
-                    var.trace_add('write', lambda *args, u=update_param: u(None))
-                    
-                    # Przycisk reset
-                    def reset_param(eff=effect_key, par=param_name, v=var, default=param_info['value']):
-                        v.set(default)
-                    
-                    ttk.Button(control_frame, text="↺", width=3, 
-                              command=reset_param).pack(side=tk.LEFT, padx=2)
-            
-            # Aktualizuj region scrollowania
-            self.effects_container.update_idletasks()
-            self.middle_canvas.configure(scrollregion=self.middle_canvas.bbox("all"))
-            
-            # Bind mousewheel do nowo utworzonych elementów
-            if hasattr(self, 'middle_panel_bind_mousewheel'):
-                self.middle_panel_bind_mousewheel(self.effects_container)
-            
-            self.log(f"DEBUG: Advanced params display updated, created {len(enabled_effects)} effect sections")
-            
-        except Exception as e:
-            self.log(f"ERROR in update_advanced_params_display: {str(e)}")
-            import traceback
-            self.log(f"Traceback: {traceback.format_exc()}")
+                        var = tk.IntVar(value=current_value)
+                    self.param_vars[effect_key][param_name] = var
+                else:
+                    var = self.param_vars[effect_key][param_name]
+                
+                # Slider
+                slider = ttk.Scale(control_frame, from_=param_info['min'], to=param_info['max'],
+                                   variable=var, orient=tk.HORIZONTAL, length=180)
+                slider.pack(side=tk.LEFT, fill=tk.X, expand=True)
+                
+                # Wartość
+                value_label = ttk.Label(control_frame, 
+                                       text=f"{current_value:.2f}" if isinstance(current_value, float) else str(current_value),
+                                       style='Accent.TLabel', width=6, font=('Segoe UI', 8))
+                value_label.pack(side=tk.LEFT, padx=3)
+                
+                # Aktualizuj label przy zmianie i zapisz do effect_params
+                def update_param(val, eff=effect_key, par=param_name, lbl=value_label, 
+                               v=var, is_float=isinstance(param_info['value'], float)):
+                    if is_float:
+                        lbl.config(text=f"{v.get():.2f}")
+                    else:
+                        lbl.config(text=str(int(v.get())))
+                    # Zapisz do effect_params
+                    if eff not in self.effect_params:
+                        self.effect_params[eff] = {}
+                    self.effect_params[eff][par] = v.get()
+                
+                # Usuń stare trace jeśli istnieje, dodaj nowe
+                var.trace_add('write', lambda *args, u=update_param: u(None))
+                
+                # Przycisk reset
+                def reset_param(eff=effect_key, par=param_name, v=var, default=param_info['value']):
+                    v.set(default)
+                
+                ttk.Button(control_frame, text="↺", width=3, 
+                          command=reset_param).pack(side=tk.LEFT, padx=2)
+        
+        # Aktualizuj region scrollowania
+        self.effects_container.update_idletasks()
+        self.middle_canvas.configure(scrollregion=self.middle_canvas.bbox("all"))
     
     def reset_all_params(self):
         """Resetuje wszystkie parametry zaawansowane do wartości domyślnych."""
@@ -786,10 +732,6 @@ class App:
     
     def log(self, message):
         """Dodaje wiadomość do logu."""
-        # Check if log_text exists (it's created in setup_right_panel)
-        if not hasattr(self, 'log_text'):
-            return
-        
         import datetime
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
         self.log_text.configure(state=tk.NORMAL)
@@ -1422,43 +1364,19 @@ class App:
     
     def toggle_advanced_mode(self):
         """Przełącza tryb zaawansowany - pokazuje/ukrywa środkowy panel."""
-        try:
-            self.log(f"DEBUG: toggle_advanced_mode called, checkbox value: {self.advanced_mode_var.get()}")
-            
-            if self.advanced_mode_var.get():
-                # Pokaż środkowy panel
-                self.log(f"DEBUG: Showing middle panel, currently visible: {self.middle_panel_visible}")
-                if not self.middle_panel_visible:
-                    # Najpierw usuń prawy panel
-                    right_panes = self.main_paned.panes()
-                    if len(right_panes) > 1:
-                        right_panel = right_panes[-1]  # Ostatni panel (prawy)
-                        self.main_paned.forget(right_panel)
-                    
-                    # Dodaj środkowy panel
-                    self.main_paned.add(self.middle_frame, weight=0)
-                    
-                    # Dodaj z powrotem prawy panel
-                    if len(right_panes) > 1:
-                        self.main_paned.add(right_panel, weight=1)
-                    
-                    self.middle_panel_visible = True
-                    self.log("DEBUG: Middle panel added to paned window")
-                
-                self.update_advanced_params_display()
-                self.log(language_manager.t('log_advanced_enabled'))
-            else:
-                # Ukryj środkowy panel
-                self.log(f"DEBUG: Hiding middle panel, currently visible: {self.middle_panel_visible}")
-                if self.middle_panel_visible:
-                    self.main_paned.forget(self.middle_frame)
-                    self.middle_panel_visible = False
-                    self.log("DEBUG: Middle panel removed from paned window")
-                self.log(language_manager.t('log_advanced_disabled'))
-        except Exception as e:
-            self.log(f"ERROR in toggle_advanced_mode: {str(e)}")
-            import traceback
-            self.log(f"Traceback: {traceback.format_exc()}")
+        if self.advanced_mode_var.get():
+            # Pokaż środkowy panel
+            if not self.middle_panel_visible:
+                self.main_paned.add(self.middle_frame, weight=0, before=self.main_paned.panes()[-1])
+                self.middle_panel_visible = True
+            self.update_advanced_params_display()
+            self.log(language_manager.t('log_advanced_enabled'))
+        else:
+            # Ukryj środkowy panel
+            if self.middle_panel_visible:
+                self.main_paned.forget(self.middle_frame)
+                self.middle_panel_visible = False
+            self.log(language_manager.t('log_advanced_disabled'))
     
     def get_enabled_effects(self):
         """Zwraca listę włączonych efektów."""
@@ -1890,17 +1808,6 @@ class App:
         else:
             self.sync_slider.config(to=1)
             self.sync_frame_info.set(language_manager.t('frame_info_empty'))
-    
-    def on_language_change(self, event=None):
-        """Handle language selection change from combobox."""
-        selected_display_name = self.language_var.get()
-        # Find the language code for the selected display name
-        available_langs = language_manager.get_available_languages()
-        for lang_code, display_name in available_langs.items():
-            if display_name == selected_display_name:
-                language_manager.set_language(lang_code)
-                self.log(language_manager.t('log_language_changed', language=display_name))
-                break
 
 
 if __name__ == '__main__':

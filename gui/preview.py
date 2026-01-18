@@ -14,6 +14,7 @@ except ImportError:
     PIL_AVAILABLE = False
 
 from core.utils import get_frame_info
+from config.languages import language_manager
 
 
 class PreviewPlayer:
@@ -47,6 +48,9 @@ class PreviewPlayer:
         self.canvas_width = width
         self.canvas_height = height
         self.image_aspect_ratio = None
+        
+        # Register for language changes
+        language_manager.register_callback(self.on_language_changed)
         
         # Canvas do wyświetlania z ciemnym tłem i obramowaniem
         canvas_frame = tk.Frame(self.frame, bg='#00d4ff', padx=1, pady=1)
@@ -105,12 +109,12 @@ class PreviewPlayer:
         ttk.Button(ctrl_frame, text="▶", width=4, command=self.next_frame).pack(side=tk.LEFT, padx=3)
         
         # Metadane (przeniesione pod kontrolki)
-        self.metadata_frame = ttk.LabelFrame(self.frame, text="Metadane", padding=5)
+        self.metadata_frame = ttk.LabelFrame(self.frame, text=language_manager.t('metadata_title'), padding=5)
         self.metadata_frame.pack(pady=5, fill=tk.X)
         
-        self.metadata_dimensions = tk.StringVar(value="Wymiary: -")
-        self.metadata_extension = tk.StringVar(value="Rozszerzenie: -")
-        self.metadata_location = tk.StringVar(value="Lokalizacja: -")
+        self.metadata_dimensions = tk.StringVar(value=language_manager.t('metadata_dimensions_value', value='-'))
+        self.metadata_extension = tk.StringVar(value=language_manager.t('metadata_extension_value', value='-'))
+        self.metadata_location = tk.StringVar(value=language_manager.t('metadata_location_value', value='-'))
         
         ttk.Label(self.metadata_frame, textvariable=self.metadata_dimensions, 
                  font=('Segoe UI', 8)).pack(anchor=tk.W)
@@ -323,11 +327,11 @@ class PreviewPlayer:
                 
                 # Callback postępu - aktualizuj częściej dla płynności
                 if progress_callback and total_frames > 0:
-                    progress = (i + 1) / total_frames * 100
+                    progress = round((i + 1) / total_frames * 100)
                     # Aktualizuj komunikat co 5% lub co klatkę dla małych zestawów
                     update_frequency = max(1, total_frames // 20) if total_frames > 20 else 1
                     if i == 0 or (i + 1) % update_frequency == 0 or i == total_frames - 1:
-                        progress_callback(f"Ładowanie klatek: {i + 1}/{total_frames} ({progress:.0f}%)")
+                        progress_callback(language_manager.t('loading_frames', current=i + 1, total=total_frames, percent=progress))
                     
                     # Sprawdź czy progress_callback ma metodę update_progress_only dla częstszych aktualizacji
                     if hasattr(progress_callback, '__self__') and hasattr(progress_callback.__self__, 'update_progress_only'):
@@ -496,23 +500,23 @@ class PreviewPlayer:
     def update_metadata(self, file_path):
         """Aktualizuje wyświetlane metadane."""
         if file_path is None or not os.path.exists(file_path):
-            self.metadata_dimensions.set("Wymiary: -")
-            self.metadata_extension.set("Rozszerzenie: -")
-            self.metadata_location.set("Lokalizacja: -")
+            self.metadata_dimensions.set(language_manager.t('metadata_dimensions_value', value='-'))
+            self.metadata_extension.set(language_manager.t('metadata_extension_value', value='-'))
+            self.metadata_location.set(language_manager.t('metadata_location_value', value='-'))
             return
         
         try:
             # Wymiary
             if self.current_frame < len(self.full_frames):
                 img = self.full_frames[self.current_frame]
-                self.metadata_dimensions.set(f"Wymiary: {img.width} × {img.height} px")
+                self.metadata_dimensions.set(language_manager.t('metadata_dimensions_value', value=f"{img.width} × {img.height} px"))
             else:
-                self.metadata_dimensions.set("Wymiary: -")
+                self.metadata_dimensions.set(language_manager.t('metadata_dimensions_value', value='-'))
             
             # Rozszerzenie
             _, ext = os.path.splitext(file_path)
-            ext = ext[1:] if ext else "brak"
-            self.metadata_extension.set(f"Rozszerzenie: {ext.upper()}")
+            ext = ext[1:] if ext else language_manager.t('metadata_no_extension')
+            self.metadata_extension.set(language_manager.t('metadata_extension_value', value=ext.upper()))
             
             # Lokalizacja
             path_obj = Path(file_path)
@@ -520,11 +524,11 @@ class PreviewPlayer:
             # Skróć jeśli zbyt długie
             if len(location) > 50:
                 location = "..." + location[-47:]
-            self.metadata_location.set(f"Lokalizacja: {location}")
+            self.metadata_location.set(language_manager.t('metadata_location_value', value=location))
         except:
-            self.metadata_dimensions.set("Wymiary: -")
-            self.metadata_extension.set("Rozszerzenie: -")
-            self.metadata_location.set("Lokalizacja: -")
+            self.metadata_dimensions.set(language_manager.t('metadata_dimensions_value', value='-'))
+            self.metadata_extension.set(language_manager.t('metadata_extension_value', value='-'))
+            self.metadata_location.set(language_manager.t('metadata_location_value', value='-'))
     
     def on_bg_change(self):
         """Wywoływane przy zmianie koloru tła obrazu."""
@@ -726,3 +730,22 @@ class PreviewPlayer:
     
     def update_fps(self):
         self.fps = self.fps_var.get()
+    
+    def on_language_changed(self, language):
+        """Called when the language changes to update UI elements."""
+        # Update metadata frame title
+        self.metadata_frame.config(text=language_manager.t('metadata_title'))
+        
+        # Update metadata labels with current values
+        current_dims = self.metadata_dimensions.get().split(': ', 1)
+        current_ext = self.metadata_extension.get().split(': ', 1)
+        current_loc = self.metadata_location.get().split(': ', 1)
+        
+        # Preserve the values but update the labels
+        dims_value = current_dims[1] if len(current_dims) > 1 else '-'
+        ext_value = current_ext[1] if len(current_ext) > 1 else '-'
+        loc_value = current_loc[1] if len(current_loc) > 1 else '-'
+        
+        self.metadata_dimensions.set(language_manager.t('metadata_dimensions_value', value=dims_value))
+        self.metadata_extension.set(language_manager.t('metadata_extension_value', value=ext_value))
+        self.metadata_location.set(language_manager.t('metadata_location_value', value=loc_value))

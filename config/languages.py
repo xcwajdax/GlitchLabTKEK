@@ -103,6 +103,19 @@ TRANSLATIONS = {
         'warning_no_frames_preview': 'Najpierw załaduj podgląd aby określić liczbę klatek!',
         'success_frames_created': 'Utworzono {count} klatek',
         
+        # Metadata labels
+        'metadata_title': 'Metadane',
+        'metadata_dimensions': 'Wymiary',
+        'metadata_extension': 'Rozszerzenie', 
+        'metadata_location': 'Lokalizacja',
+        'metadata_dimensions_value': 'Wymiary: {value}',
+        'metadata_extension_value': 'Rozszerzenie: {value}',
+        'metadata_location_value': 'Lokalizacja: {value}',
+        'metadata_no_extension': 'brak',
+        
+        # Loading messages
+        'loading_frames': 'Ładowanie klatek: {current}/{total} ({percent}%)',
+        
         # Log messages
         'log_topkek_opened': 'Otwarto link TOPKEK w przeglądarce',
         'log_topkek_error': 'Nie można otworzyć linku: {error}',
@@ -245,6 +258,19 @@ TRANSLATIONS = {
         'warning_no_images': 'No image files found in output directory!',
         'warning_no_frames_preview': 'First load preview to determine frame count!',
         'success_frames_created': 'Created {count} frames',
+        
+        # Metadata labels
+        'metadata_title': 'Metadata',
+        'metadata_dimensions': 'Dimensions',
+        'metadata_extension': 'Extension',
+        'metadata_location': 'Location',
+        'metadata_dimensions_value': 'Dimensions: {value}',
+        'metadata_extension_value': 'Extension: {value}',
+        'metadata_location_value': 'Location: {value}',
+        'metadata_no_extension': 'none',
+        
+        # Loading messages
+        'loading_frames': 'Loading frames: {current}/{total} ({percent}%)',
         
         # Log messages
         'log_topkek_opened': 'Opened TOPKEK link in browser',

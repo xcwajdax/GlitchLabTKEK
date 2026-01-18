@@ -163,12 +163,12 @@ def process_frames(input_dir, output_dir, multiplier, intensity, enabled_effects
             
             # Aktualizuj pasek postępu częściej - po każdej wygenerowanej klatce
             if progress_callback:
-                current_progress = output_frame_idx / total_output * 100
+                current_progress = round(output_frame_idx / total_output * 100)
                 progress_callback(current_progress)
         
         # Dodatkowa aktualizacja po zakończeniu przetwarzania każdej klatki wejściowej
         if progress_callback:
-            overall_progress = (i + 1) / total_input * 100
+            overall_progress = round((i + 1) / total_input * 100)
             # Nie duplikuj aktualizacji jeśli multiplier == 1
             if multiplier == 1:
                 pass  # Już zaktualizowane powyżej
